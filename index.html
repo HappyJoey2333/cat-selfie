@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <title>猫咪自拍助手</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <!-- 主界面 -->
+  <div id="app">
+    <!-- 摄像头视频预览 -->
+    <video id="camera" autoplay playsinline muted></video>
+
+    <!-- 暗色遮罩层 -->
+    <div id="overlay-mask"></div>
+
+    <!-- 红点 -->
+    <div id="red-dot"></div>
+
+    <!-- 顶部工具栏 -->
+    <div id="toolbar">
+      <button id="btn-toggle-dot" class="toolbar-btn" title="开关红点">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="12" r="8"/>
+        </svg>
+      </button>
+      <button id="btn-voice" class="toolbar-btn" title="声控拍照">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+        </svg>
+      </button>
+      <button id="btn-settings" class="toolbar-btn" title="设置">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81a.47.47 0 00-.48-.41h-3.84a.47.47 0 00-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.72 8.87a.48.48 0 00.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- 设置面板 -->
+    <div id="settings-panel" class="hidden">
+      <div id="settings-content">
+        <div class="settings-header">
+          <span>设置</span>
+          <button id="btn-close-settings" class="toolbar-btn" title="关闭">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="setting-item">
+          <label class="setting-label">
+            <span>背景明暗</span>
+            <span class="setting-value" id="mask-value">30%</span>
+          </label>
+          <input type="range" id="slider-mask" class="setting-slider" min="0" max="80" value="30">
+        </div>
+        <div class="setting-item">
+          <label class="setting-label">
+            <span>红点速度</span>
+            <span class="setting-value" id="speed-value">5</span>
+          </label>
+          <input type="range" id="slider-speed" class="setting-slider" min="1" max="15" value="5">
+        </div>
+        <div class="setting-item">
+          <label class="setting-label">
+            <span>鸟叫频率</span>
+            <span class="setting-value" id="freq-value">5</span>
+          </label>
+          <input type="range" id="slider-freq" class="setting-slider" min="1" max="10" value="5">
+        </div>
+      </div>
+    </div>
+
+    <!-- 拍照按钮 -->
+    <div id="capture-area">
+      <button id="btn-capture" aria-label="拍照">
+        <div class="capture-ring">
+          <div class="capture-inner"></div>
+        </div>
+      </button>
+    </div>
+
+    <!-- 连拍闪光效果 -->
+    <div id="flash"></div>
+
+    <!-- 照片计数提示 -->
+    <div id="burst-counter" class="hidden">
+      <span id="burst-count">0</span> 张
+    </div>
+
+    <!-- 相册缩略图入口 -->
+    <button id="btn-gallery" class="hidden" aria-label="查看照片">
+      <div class="gallery-thumb"></div>
+      <span class="gallery-badge" id="gallery-badge">0</span>
+    </button>
+  </div>
+
+  <!-- 相册面板 -->
+  <div id="gallery-panel" class="hidden">
+    <div id="gallery-header">
+      <button id="btn-gallery-back" class="toolbar-btn" aria-label="返回">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <h2>连拍照片</h2>
+      <div class="gallery-actions">
+        <button id="btn-select-all" class="text-btn">全选</button>
+        <button id="btn-save-selected" class="text-btn primary">保存</button>
+      </div>
+    </div>
+    <div id="gallery-grid"></div>
+    <div id="gallery-empty" class="hidden">
+      <p>还没有照片，快去拍摄吧！</p>
+    </div>
+    <!-- 大图预览 -->
+    <div id="preview-modal" class="hidden">
+      <img id="preview-image" src="" alt="预览">
+      <div id="preview-actions">
+        <button id="btn-preview-save" class="text-btn primary">保存</button>
+        <button id="btn-preview-delete" class="text-btn danger">删除</button>
+        <button id="btn-preview-close" class="text-btn">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 隐藏的 canvas 用于截帧 -->
+  <canvas id="capture-canvas" class="hidden"></canvas>
+
+  <script src="js/dot.js"></script>
+  <script src="js/gallery.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
